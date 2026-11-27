@@ -12,6 +12,7 @@ coverage/
 *.tsbuildinfo
 
 # Local files
+infrastructure/data/
 uploads/
 .tmp/
 *.log
