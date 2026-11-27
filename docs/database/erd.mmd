@@ -1,0 +1,223 @@
+erDiagram
+    TENANT ||--o{ MEMBERSHIP : possui
+    USER ||--o{ MEMBERSHIP : participa
+    TENANT ||--o| WHATSAPP_CONNECTION : conecta
+    TENANT ||--o{ CONTACT : cadastra
+    CONTACT ||--o{ CONTACT_CONSENT : possui
+    CONTACT ||--o{ CONSENT_EVENT : registra
+    TENANT ||--o{ CONSENT_EVENT : audita
+    TENANT ||--o{ TAG : define
+    CONTACT ||--o{ CONTACT_TAG : recebe
+    TAG ||--o{ CONTACT_TAG : classifica
+    TENANT ||--o{ SEGMENT : salva
+    USER ||--o{ SEGMENT : cria
+    TENANT ||--o{ MESSAGE_TEMPLATE : possui
+    WHATSAPP_CONNECTION ||--o{ MESSAGE_TEMPLATE : sincroniza
+    TENANT ||--o{ CAMPAIGN : cria
+    SEGMENT o|--o{ CAMPAIGN : seleciona
+    MESSAGE_TEMPLATE ||--o{ CAMPAIGN : utiliza
+    USER ||--o{ CAMPAIGN : autoriza
+    CAMPAIGN ||--o{ CAMPAIGN_RECIPIENT : contem
+    CONTACT ||--o{ CAMPAIGN_RECIPIENT : recebe
+    CAMPAIGN_RECIPIENT ||--o| MESSAGE : origina
+    CONTACT ||--o{ MESSAGE : participa
+    WHATSAPP_CONNECTION ||--o{ MESSAGE : transmite
+    MESSAGE ||--o{ MESSAGE_EVENT : recebe
+    CONTACT ||--o{ SUPPRESSION : pode_ter
+    TENANT ||--o{ IMPORT_JOB : importa
+    USER ||--o{ IMPORT_JOB : inicia
+    TENANT ||--o{ OUTBOX_EVENT : publica
+    TENANT ||--o{ WEBHOOK_EVENT : recebe
+    TENANT ||--o{ AUDIT_LOG : registra
+    USER o|--o{ AUDIT_LOG : executa
+
+    TENANT {
+        uuid id PK
+        string name
+        string slug UK
+        datetime created_at
+        datetime updated_at
+    }
+    USER {
+        uuid id PK
+        string email UK
+        string password_hash
+        string name
+        string status
+        datetime created_at
+    }
+    MEMBERSHIP {
+        uuid id PK
+        uuid tenant_id FK
+        uuid user_id FK
+        string role
+        datetime created_at
+    }
+    WHATSAPP_CONNECTION {
+        uuid id PK
+        uuid tenant_id FK,UK
+        string waba_id
+        string phone_number_id UK
+        string display_phone
+        string status
+        string token_ciphertext
+        datetime token_expires_at
+    }
+    CONTACT {
+        uuid id PK
+        uuid tenant_id FK
+        string external_id
+        string name
+        string phone_e164
+        date birthday
+        datetime last_visit_at
+        string source
+        datetime deleted_at
+    }
+    CONTACT_CONSENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid contact_id FK
+        string channel
+        string purpose
+        string status
+        datetime granted_at
+        datetime revoked_at
+    }
+    CONSENT_EVENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid contact_id FK
+        string action
+        string channel
+        string purpose
+        string source
+        json evidence_metadata
+        datetime occurred_at
+        datetime recorded_at
+    }
+    TAG {
+        uuid id PK
+        uuid tenant_id FK
+        string name
+    }
+    CONTACT_TAG {
+        uuid contact_id FK
+        uuid tag_id FK
+        datetime created_at
+    }
+    SEGMENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid created_by FK
+        string name
+        json filter_definition
+        datetime created_at
+    }
+    MESSAGE_TEMPLATE {
+        uuid id PK
+        uuid tenant_id FK
+        uuid connection_id FK
+        string provider_template_name
+        string language
+        string category
+        string status
+        json components
+        datetime synced_at
+    }
+    CAMPAIGN {
+        uuid id PK
+        uuid tenant_id FK
+        uuid segment_id FK
+        uuid template_id FK
+        uuid created_by FK
+        string name
+        string status
+        datetime scheduled_at
+        datetime started_at
+        datetime completed_at
+    }
+    CAMPAIGN_RECIPIENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid campaign_id FK
+        uuid contact_id FK
+        string status
+        json template_parameters
+        string error_code
+        datetime queued_at
+        datetime updated_at
+    }
+    MESSAGE {
+        uuid id PK
+        uuid tenant_id FK
+        uuid connection_id FK
+        uuid contact_id FK
+        uuid campaign_recipient_id FK,UK
+        string direction
+        string provider_message_id UK
+        string status
+        datetime accepted_at
+        datetime delivered_at
+        datetime read_at
+    }
+    MESSAGE_EVENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid message_id FK
+        string event_type
+        json provider_payload
+        datetime occurred_at
+        datetime received_at
+    }
+    SUPPRESSION {
+        uuid id PK
+        uuid tenant_id FK
+        uuid contact_id FK
+        string channel
+        string purpose
+        string reason
+        datetime created_at
+    }
+    IMPORT_JOB {
+        uuid id PK
+        uuid tenant_id FK
+        uuid created_by FK
+        string filename
+        string status
+        int total_rows
+        int imported_rows
+        int rejected_rows
+        datetime created_at
+    }
+    OUTBOX_EVENT {
+        uuid id PK
+        uuid tenant_id FK
+        string aggregate_type
+        uuid aggregate_id
+        string event_type
+        json payload
+        datetime occurred_at
+        datetime published_at
+        int attempts
+    }
+    WEBHOOK_EVENT {
+        uuid id PK
+        uuid tenant_id FK
+        uuid connection_id FK
+        string dedupe_key UK
+        json payload
+        string status
+        datetime received_at
+        datetime processed_at
+    }
+    AUDIT_LOG {
+        uuid id PK
+        uuid tenant_id FK
+        uuid actor_user_id FK
+        string action
+        string entity_type
+        uuid entity_id
+        json metadata
+        datetime created_at
+    }
