@@ -38,6 +38,7 @@ model Contact {
   consentStatus String   @default("PENDING")
   consentAt     DateTime?
   consentSource String?
+  campaignRecipients CampaignRecipient[]
 }
 
 model Campaign {
