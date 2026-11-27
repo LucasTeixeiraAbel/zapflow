@@ -11,9 +11,7 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
-    "@prisma/client": "7.10.1",
     "@zapflow/shared": "workspace:*",
-    "prisma": "7.10.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
@@ -21,6 +19,8 @@
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
-    "@types/node": "^20.0.0"
+    "@prisma/client": "6.4.1",
+    "@types/node": "^20.0.0",
+    "prisma": "6.4.1"
   }
 }
