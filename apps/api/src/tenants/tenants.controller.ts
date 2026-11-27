@@ -7,6 +7,6 @@ export class TenantsController {
 
   @Get()
   findAll() {
-    return this.tenantsService.findAll();
+    return { status: 'ok', data: this.tenantsService.findAll() };
   }
 }
