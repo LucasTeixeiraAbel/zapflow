@@ -32,7 +32,12 @@ model Contact {
   name          String
   phone         String
   tags          String[]
+  birthday      DateTime?
+  lastVisitAt   DateTime?
+  externalId    String?
   consentStatus String   @default("PENDING")
+  consentAt     DateTime?
+  consentSource String?
 }
 
 model Campaign {
