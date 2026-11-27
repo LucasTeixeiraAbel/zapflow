@@ -47,4 +47,15 @@ model Campaign {
   name      String
   status    String   @default("DRAFT")
   createdAt DateTime @default(now())
+  recipients    CampaignRecipient[]
+  templateId    String
+}
+
+model CampaignRecipient {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  status     String   @default("PENDING") // PENDING, SENT, FAILED
 }

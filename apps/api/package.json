@@ -8,11 +8,13 @@
     "start": "node dist/main"
   },
   "dependencies": {
+    "@nestjs/bullmq": "^12.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@zapflow/shared": "workspace:*",
+    "bullmq": "^5.81.6",
     "multer": "^2.5.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
