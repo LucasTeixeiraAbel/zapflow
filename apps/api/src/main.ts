@@ -1,8 +1,17 @@
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Proteção de Cabeçalhos HTTP com Helmet (XSS, Clickjacking, MIME sniffing, HSTS)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false, // Permite flexibilidade de assets em SaaS
+    }),
+  );
 
   // CORS robusto para produção permitindo qualquer origem Vercel
   app.enableCors({

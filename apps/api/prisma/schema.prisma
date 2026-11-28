@@ -17,6 +17,7 @@ model Tenant {
   contacts            Contact[]
   campaigns           Campaign[]
   whatsappConnections WhatsAppConnection[]
+  emailConnections    EmailConnection[]
 }
 
 model User {
@@ -48,13 +49,28 @@ model WhatsAppConnection {
   wabaId               String?
   displayPhoneNumber   String?
   displayName          String?
-  provider             String   @default("SIMULATED") // SIMULATED, CLOUD_API
+  provider             String   @default("SIMULATED") // SIMULATED, CLOUD_API, EVOLUTION_API
   status               String   @default("CONNECTED") // CONNECTED, DISCONNECTED, PENDING
   accessTokenEncrypted String?
   qualityRating        String   @default("GREEN") // GREEN, YELLOW, RED, UNKNOWN
   createdAt            DateTime @default(now())
   updatedAt            DateTime @default(now()) @updatedAt
   tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model EmailConnection {
+  id              String   @id @default(uuid())
+  tenantId        String
+  provider        String   @default("SIMULATED") // SIMULATED, BREVO
+  senderEmail     String?  @default("contato@zapflow.io")
+  senderName      String?  @default("ZapFlow")
+  apiKeyEncrypted String?
+  status          String   @default("CONNECTED") // CONNECTED, DISCONNECTED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }
@@ -83,6 +99,8 @@ model Campaign {
   id               String              @id @default(uuid())
   tenantId         String
   name             String
+  channel          String              @default("WHATSAPP") // WHATSAPP, EMAIL
+  emailSubject     String?
   templateName     String              @default("ola_boas_vindas")
   templateLanguage String              @default("pt_BR")
   messageBody      String?
@@ -107,6 +125,7 @@ model CampaignRecipient {
   campaignId        String
   contactId         String
   phone             String
+  email             String?
   contactName       String
   status            String    @default("PENDING") // PENDING, QUEUED, SENT, DELIVERED, READ, FAILED
   externalMessageId String?

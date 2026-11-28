@@ -6,7 +6,9 @@ import { SendMessageJobData } from './campaigns.processor';
 
 export interface CreateCampaignDto {
   name: string;
-  templateName: string;
+  templateName?: string;
+  channel?: 'WHATSAPP' | 'EMAIL';
+  emailSubject?: string;
   contactIds?: string[];
   filterTags?: string[];
 }
@@ -39,7 +41,7 @@ export class CampaignsService {
           orderBy: { createdAt: 'asc' },
           include: {
             contact: {
-              select: { name: true, phone: true, consentStatus: true },
+              select: { name: true, phone: true, email: true, consentStatus: true },
             },
           },
         },
@@ -51,8 +53,15 @@ export class CampaignsService {
   }
 
   async create(tenantId: string, dto: CreateCampaignDto) {
-    if (!dto.name || !dto.templateName) {
-      throw new BadRequestException('Nome da campanha e template são obrigatórios');
+    const channel = dto.channel || 'WHATSAPP';
+    const templateName = dto.templateName || (channel === 'EMAIL' ? 'email_promocional' : 'ola_boas_vindas');
+
+    if (!dto.name) {
+      throw new BadRequestException('Nome da campanha é obrigatório');
+    }
+
+    if (channel === 'EMAIL' && !dto.emailSubject) {
+      throw new BadRequestException('Assunto do e-mail é obrigatório para campanhas de e-mail');
     }
 
     // 1. Busca os contatos elegíveis (excluindo contatos com OPT_OUT)
@@ -60,6 +69,10 @@ export class CampaignsService {
       tenantId,
       consentStatus: { not: 'OPT_OUT' }, // Garantia de conformidade LGPD
     };
+
+    if (channel === 'EMAIL') {
+      contactsWhere.email = { not: null };
+    }
 
     if (dto.contactIds && dto.contactIds.length > 0) {
       contactsWhere.id = { in: dto.contactIds };
@@ -73,7 +86,9 @@ export class CampaignsService {
 
     if (eligibleContacts.length === 0) {
       throw new BadRequestException(
-        'Nenhum contato elegível encontrado para esta campanha (verifique consentimento e filtros).',
+        channel === 'EMAIL'
+          ? 'Nenhum contato com e-mail válido e consentimento ativo foi encontrado.'
+          : 'Nenhum contato elegível encontrado para esta campanha (verifique consentimento e filtros).',
       );
     }
 
@@ -82,7 +97,9 @@ export class CampaignsService {
       data: {
         tenantId,
         name: dto.name.trim(),
-        templateName: dto.templateName,
+        channel,
+        emailSubject: dto.emailSubject || null,
+        templateName,
         status: 'PROCESSING',
         totalCount: eligibleContacts.length,
       },
@@ -94,6 +111,7 @@ export class CampaignsService {
         campaignId: campaign.id,
         contactId: c.id,
         phone: c.phone,
+        email: c.email || null,
         contactName: c.name,
         status: 'QUEUED',
       })),
@@ -102,7 +120,7 @@ export class CampaignsService {
     // 4. Busca os recipients criados com seus IDs para enfileirar no BullMQ
     const recipients = await this.prisma.campaignRecipient.findMany({
       where: { campaignId: campaign.id },
-      select: { id: true, contactId: true, phone: true, contactName: true },
+      select: { id: true, contactId: true, phone: true, email: true, contactName: true },
     });
 
     // 5. Enfileiramento em lote atômico (addBulk) evitando timeouts
@@ -114,8 +132,11 @@ export class CampaignsService {
         contactId: r.contactId,
         tenantId,
         phone: r.phone,
+        email: r.email || undefined,
         contactName: r.contactName,
-        templateName: dto.templateName,
+        templateName,
+        channel,
+        emailSubject: dto.emailSubject,
       } as SendMessageJobData,
       opts: {
         attempts: 3,
@@ -144,23 +165,23 @@ export class CampaignsService {
       },
     });
 
-    const totals = campaigns.reduce(
-      (acc, c) => {
-        acc.total += c.totalCount;
-        acc.sent += c.sentCount;
-        acc.delivered += c.deliveredCount;
-        acc.read += c.readCount;
-        acc.failed += c.failedCount;
-        return acc;
-      },
-      { total: 0, sent: 0, delivered: 0, read: 0, failed: 0 },
-    );
+    const totalCampaigns = campaigns.length;
+    const totalMessages = campaigns.reduce((acc, c) => acc + c.totalCount, 0);
+    const sent = campaigns.reduce((acc, c) => acc + c.sentCount, 0);
+    const delivered = campaigns.reduce((acc, c) => acc + c.deliveredCount, 0);
+    const read = campaigns.reduce((acc, c) => acc + c.readCount, 0);
+    const failed = campaigns.reduce((acc, c) => acc + c.failedCount, 0);
 
-    const deliveryRate = totals.sent > 0 ? Math.round((totals.delivered / totals.sent) * 100) : 0;
-    const readRate = totals.delivered > 0 ? Math.round((totals.read / totals.delivered) * 100) : 0;
+    const deliveryRate = sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0;
+    const readRate = delivered > 0 ? Number(((read / delivered) * 100).toFixed(1)) : 0;
 
     return {
-      ...totals,
+      totalCampaigns,
+      totalMessages,
+      sent,
+      delivered,
+      read,
+      failed,
       deliveryRate,
       readRate,
     };

@@ -4,6 +4,7 @@ import { CampaignsController } from './campaigns.controller';
 import { CampaignsService } from './campaigns.service';
 import { CampaignsProcessor } from './campaigns.processor';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
       name: 'messages',
     }),
     WhatsappModule,
+    EmailModule,
   ],
   controllers: [CampaignsController],
   providers: [CampaignsService, CampaignsProcessor],
