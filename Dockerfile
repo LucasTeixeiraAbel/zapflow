@@ -18,7 +18,7 @@ RUN pnpm install --frozen-lockfile
 WORKDIR /app/apps/api
 RUN pnpm exec prisma generate
 
-# Compila o NestJS
+# Compila o NestJS (versão de produção atualizada)
 RUN pnpm run build
 
 # Stage de Produção (Imagem final enxuta)
@@ -29,13 +29,10 @@ RUN npm install -g pnpm@12.23.0
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
-ENV PORT=3000
 
 COPY --from=builder /app /app
 
 WORKDIR /app/apps/api
 
-EXPOSE 3000
-
-# Executa migrações do Prisma no banco em nuvem e inicia a API
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/main.js"]
+# Inicia a API NestJS imediatamente (ela escuta a porta do Render sem travar)
+CMD ["node", "dist/main.js"]
