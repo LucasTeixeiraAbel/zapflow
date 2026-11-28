@@ -8,9 +8,10 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "@zapflow/shared": "workspace:*",
     "bullmq": "^5.0.0",
-    "ioredis": "^5.0.0",
-    "@zapflow/shared": "workspace:*"
+    "ioredis": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

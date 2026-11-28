@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export const metadata: Metadata = {
   title: "ZapFlow",
-  description: "Plataforma de comunicação para pequenos negócios",
+  description: "Plataforma de comunicação",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-gray-50 text-gray-900">{children}</body>
+      <body className="min-h-screen bg-gray-50">
+        <DashboardLayout>{children}</DashboardLayout>
+      </body>
     </html>
   );
 }
