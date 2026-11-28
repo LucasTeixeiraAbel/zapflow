@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  baseURL: rawUrl.replace(/\/$/, ''),
 });
 
 // Interceptor para injetar o JWT Token nas requisições
@@ -20,7 +21,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (typeof window !== 'undefined' && error.response?.status === 401) {
-      // Se não estiver na página de login, redireciona
       if (!window.location.pathname.includes('/login')) {
         localStorage.removeItem('zapflow_token');
         localStorage.removeItem('zapflow_user');
