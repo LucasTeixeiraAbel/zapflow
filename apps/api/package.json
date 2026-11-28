@@ -28,6 +28,7 @@
     "@types/node": "^20.0.0",
     "csv-parse": "^7.0.3",
     "libphonenumber-js": "^1.13.17",
-    "prisma": "6.4.1"
+    "prisma": "6.4.1",
+    "ts-node": "^10.9.2"
   }
 }
