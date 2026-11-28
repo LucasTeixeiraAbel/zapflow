@@ -16,12 +16,25 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get('REDIS_HOST', 'localhost'),
-          port: config.get('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        if (redisUrl) {
+          // Suporte nativo à URL completa do Upstash (rediss://)
+          return {
+            connection: {
+              url: redisUrl,
+              tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+            },
+          };
+        }
+        return {
+          connection: {
+            host: config.get('REDIS_HOST', 'localhost'),
+            port: Number(config.get('REDIS_PORT', 6379)),
+            password: config.get<string>('REDIS_PASSWORD'),
+          },
+        };
+      },
     }),
     AuthModule,
     TenantsModule,

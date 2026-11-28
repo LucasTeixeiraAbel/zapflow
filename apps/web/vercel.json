@@ -1,0 +1,4 @@
+{
+  "buildCommand": "pnpm --filter @zapflow/web build",
+  "outputDirectory": ".next"
+}

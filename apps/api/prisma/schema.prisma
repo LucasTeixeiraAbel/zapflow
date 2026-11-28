@@ -8,55 +8,126 @@ datasource db {
 }
 
 model Tenant {
-  id        String    @id @default(uuid())
-  name      String
-  createdAt DateTime  @default(now())
-  users     User[]
-  contacts  Contact[]
-  campaigns Campaign[]
+  id                  String               @id @default(uuid())
+  name                String
+  slug                String?              @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  memberships         Membership[]
+  contacts            Contact[]
+  campaigns           Campaign[]
+  whatsappConnections WhatsAppConnection[]
 }
 
 model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now()) @updatedAt
+  memberships  Membership[]
+}
+
+model Membership {
   id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
+  userId    String
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  role      String   @default("OWNER") // OWNER, ADMIN, MEMBER
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+}
+
+model WhatsAppConnection {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  phoneNumberId        String?
+  wabaId               String?
+  displayPhoneNumber   String?
+  displayName          String?
+  provider             String   @default("SIMULATED") // SIMULATED, CLOUD_API
+  status               String   @default("CONNECTED") // CONNECTED, DISCONNECTED, PENDING
+  accessTokenEncrypted String?
+  qualityRating        String   @default("GREEN") // GREEN, YELLOW, RED, UNKNOWN
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model Contact {
-  id            String   @id @default(uuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  name          String
-  phone         String
-  tags          String[]
-  birthday      DateTime?
-  lastVisitAt   DateTime?
-  externalId    String?
-  consentStatus String   @default("PENDING")
-  consentAt     DateTime?
-  consentSource String?
-  campaignRecipients CampaignRecipient[]
+  id                String              @id @default(uuid())
+  tenantId          String
+  name              String
+  phone             String // E.164 (+5511999999999)
+  email             String?
+  tags              String[]            @default([])
+  consentStatus     String              @default("OPT_IN") // OPT_IN, OPT_OUT, PENDING
+  consentSource     String?             @default("MANUAL") // MANUAL, CSV_IMPORT, FORM, WHATSAPP_INBOUND
+  consentAt         DateTime?           @default(now())
+  suppressionReason String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipients        CampaignRecipient[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId, consentStatus])
 }
 
 model Campaign {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  name      String
-  status    String   @default("DRAFT")
-  createdAt DateTime @default(now())
-  recipients    CampaignRecipient[]
-  templateId    String
+  id               String              @id @default(uuid())
+  tenantId         String
+  name             String
+  templateName     String              @default("ola_boas_vindas")
+  templateLanguage String              @default("pt_BR")
+  messageBody      String?
+  status           String              @default("DRAFT") // DRAFT, SCHEDULED, PROCESSING, COMPLETED, FAILED
+  totalCount       Int                 @default(0)
+  sentCount        Int                 @default(0)
+  deliveredCount   Int                 @default(0)
+  readCount        Int                 @default(0)
+  failedCount      Int                 @default(0)
+  scheduledAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @default(now()) @updatedAt
+  tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipients       CampaignRecipient[]
+
+  @@index([tenantId, status])
 }
 
 model CampaignRecipient {
-  id         String   @id @default(uuid())
-  campaignId String
-  campaign   Campaign @relation(fields: [campaignId], references: [id])
-  contactId  String
-  contact    Contact  @relation(fields: [contactId], references: [id])
-  status     String   @default("PENDING") // PENDING, SENT, FAILED
+  id                String    @id @default(uuid())
+  campaignId        String
+  contactId         String
+  phone             String
+  contactName       String
+  status            String    @default("PENDING") // PENDING, QUEUED, SENT, DELIVERED, READ, FAILED
+  externalMessageId String?
+  errorReason       String?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+  campaign          Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact           Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, status])
+  @@index([externalMessageId])
+}
+
+model WebhookLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  eventType String
+  payload   String
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
