@@ -8,6 +8,7 @@ import { SegmentsModule } from './segments/segments.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { PrismaService } from './prisma.service';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Global()
 @Module({
@@ -28,6 +29,7 @@ import { PrismaService } from './prisma.service';
     SegmentsModule,
     CampaignsModule,
     WhatsappModule,
+    AnalyticsModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],
