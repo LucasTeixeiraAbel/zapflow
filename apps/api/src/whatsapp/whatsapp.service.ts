@@ -116,6 +116,64 @@ export class WhatsappService {
     });
   }
 
+  async getEvolutionQrCode(
+    tenantId: string,
+    data: { apiUrl: string; instanceName: string; apiKey: string },
+  ) {
+    const baseUrl = data.apiUrl.replace(/\/$/, '');
+    const instance = data.instanceName.trim();
+    const apiKey = data.apiKey.trim();
+
+    try {
+      // 1. Tenta conectar na instância se já existir
+      let res = await fetch(`${baseUrl}/instance/connect/${instance}`, {
+        method: 'GET',
+        headers: { apikey: apiKey },
+      });
+
+      let json: any = null;
+      if (res.ok) {
+        json = await res.json();
+      } else {
+        // 2. Se a instância ainda não existe, cria a instância e pede QR code
+        res = await fetch(`${baseUrl}/instance/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: apiKey,
+          },
+          body: JSON.stringify({
+            instanceName: instance,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS',
+          }),
+        });
+        json = await res.json();
+      }
+
+      const qrcodeData = json?.qrcode?.base64 || json?.base64 || json?.code;
+      if (qrcodeData) {
+        const fullBase64 = qrcodeData.startsWith('data:')
+          ? qrcodeData
+          : `data:image/png;base64,${qrcodeData}`;
+        return { success: true, qrcode: fullBase64 };
+      }
+
+      // Se já estiver conectado
+      if (json?.instance?.state === 'open' || json?.state === 'open') {
+        return { success: true, alreadyConnected: true };
+      }
+
+      return {
+        success: false,
+        error: json?.message || 'Não foi possível gerar o QR Code. Verifique os dados da Evolution API.',
+      };
+    } catch (err: any) {
+      this.logger.error(`Erro ao gerar QR Code na Evolution API: ${err.message}`);
+      throw new BadRequestException('Falha de conexão com a Evolution API: ' + err.message);
+    }
+  }
+
   async sendMessage(tenantId: string, payload: SendMessagePayload): Promise<SendResult> {
     const connection = await this.getConnection(tenantId);
 
@@ -149,15 +207,10 @@ export class WhatsappService {
     connection: any,
     payload: SendMessagePayload,
   ): Promise<SendResult> {
-    // Para Evolution API / Gateway QR Code:
-    // phoneNumberId guarda o endpoint base (Ex: https://meu-evolution.com)
-    // wabaId guarda o nome da Instância (Ex: minha-empresa-01)
-    // accessTokenEncrypted guarda o apikey global ou da instância
     const baseUrl = connection.phoneNumberId?.replace(/\/$/, '') || 'http://localhost:8080';
     const instance = connection.wabaId || 'default';
     const apiKey = connection.accessTokenEncrypted || '';
 
-    // Monta o texto renderizado substituindo variáveis do template
     const template = SYSTEM_TEMPLATES.find((t) => t.id === payload.templateName);
     let messageText = template
       ? template.body.replace('{{1}}', payload.contactName).replace('{{2}}', 'condição especial')

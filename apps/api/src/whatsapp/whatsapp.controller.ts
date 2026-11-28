@@ -53,6 +53,20 @@ export class WhatsappController {
     return this.whatsappService.getAvailableTemplates();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('evolution/qrcode')
+  async getEvolutionQrCode(
+    @CurrentTenant() tenantId: string,
+    @Body()
+    dto: {
+      apiUrl: string;
+      instanceName: string;
+      apiKey: string;
+    },
+  ) {
+    return this.whatsappService.getEvolutionQrCode(tenantId, dto);
+  }
+
   // Webhook da Meta: Validação de Token de Verificação
   @Get('webhook')
   verifyWebhook(
