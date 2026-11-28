@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 
-export function ContactImporter() {
+export function ContactImporter({ onImportSuccess }: { onImportSuccess: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,6 +16,7 @@ export function ContactImporter() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       alert('Importado com sucesso!');
+      onImportSuccess();
     } catch (e) {
       alert('Erro ao importar');
     } finally {
@@ -24,12 +25,12 @@ export function ContactImporter() {
   };
 
   return (
-    <div className="p-4 border rounded">
-      <h3 className="font-bold">Importar Clientes</h3>
+    <div className="p-4 border rounded bg-white">
+      <h3 className="font-bold mb-2">Importar Clientes</h3>
       <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       <button 
         onClick={handleUpload}
-        className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+        className="bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700"
         disabled={loading}
       >
         {loading ? 'Processando...' : 'Enviar CSV'}
